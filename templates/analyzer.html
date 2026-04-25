@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+{% block title %}Threat Analyzer — CyberSec KG{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-tag">Module 4 + 6 — Expert System + Certainty Factors</div>
+    <div class="page-title">Threat <span>Analyzer</span></div>
+    <div class="page-subtitle">Forward chaining inference with MYCIN-style certainty factors. BFS traversal of knowledge graph.</div>
+</div>
+
+<div class="sidebar-layout">
+    <!-- Input Panel -->
+    <div>
+        <div class="card">
+            <div class="card-title">⬡ Input Indicators</div>
+
+            <div class="form-group">
+                <label class="form-label">Source IP Address</label>
+                <input type="text" id="inp-ip" class="form-control" placeholder="e.g. 185.220.101.45" value="185.220.101.45">
+                <div class="text-xs text-dim mt-1" style="font-family:var(--font-mono);">Known suspicious: 185.220.x, 45.33.x</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Failed Login Attempts</label>
+                <input type="number" id="inp-attempts" class="form-control" placeholder="e.g. 500" value="500" min="0">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Suspicious URL</label>
+                <input type="text" id="inp-url" class="form-control" placeholder="e.g. http://secure-login.phish.io" value="">
+            </div>
+
+            <div class="form-group">
+                <div class="flex gap-1" style="gap:1.5rem;">
+                    <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+                        <input type="checkbox" id="inp-payload"> 
+                        <span class="form-label" style="margin:0;">Suspicious Payload</span>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+                        <input type="checkbox" id="inp-email"> 
+                        <span class="form-label" style="margin:0;">Email w/ Link</span>
+                    </label>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" id="btn-analyze" onclick="runAnalysis()">
+                ⚡ Analyze Threat
+            </button>
+        </div>
+
+        <!-- Quick Presets -->
+        <div class="card mt-2">
+            <div class="card-title">⬡ Quick Presets</div>
+            <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                <button class="btn btn-outline btn-sm" onclick="loadPreset('bruteforce')">🔓 Brute Force Scenario</button>
+                <button class="btn btn-outline btn-sm" onclick="loadPreset('phishing')">🎣 Phishing Scenario</button>
+                <button class="btn btn-outline btn-sm" onclick="loadPreset('ransomware')">💀 Ransomware Scenario</button>
+                <button class="btn btn-outline btn-sm" onclick="loadPreset('sqli')">💉 SQL Injection Scenario</button>
+                <button class="btn btn-outline btn-sm" onclick="loadPreset('ddos')">⚡ DDoS Scenario</button>
+            </div>
+        </div>
+
+        <!-- Backward Chaining -->
+        <div class="card mt-2">
+            <div class="card-title">⬡ Backward Chaining</div>
+            <div class="form-group">
+                <label class="form-label">Goal Threat Type</label>
+                <select id="bc-goal" class="form-control">
+                    <option value="BruteForceAttack">BruteForceAttack</option>
+                    <option value="PhishingAttack">PhishingAttack</option>
+                    <option value="Ransomware">Ransomware</option>
+                    <option value="SQLInjection">SQLInjection</option>
+                    <option value="DDoSAttack">DDoSAttack</option>
+                    <option value="ZeroDayExploit">ZeroDayExploit</option>
+                    <option value="ManInTheMiddleAttack">ManInTheMiddleAttack</option>
+                </select>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="runBackwardChain()">⬅ Run Backward Chain</button>
+            <div id="bc-result" class="mt-2"></div>
+        </div>
+    </div>
+
+    <!-- Results Panel -->
+    <div>
+        <div id="analyze-loading" class="hidden">
+            <div class="loading"><div class="spinner"></div>Running inference engine...</div>
+        </div>
+
+        <div id="results-panel">
+            <div class="alert alert-info">
+                Enter threat indicators on the left and click <strong>Analyze Threat</strong> to run the expert system.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const presets = {
+    bruteforce: { ip: '45.33.32.156', attempts: 5000, url: '', payload: false, email: false },
+    phishing:   { ip: '203.0.113.5',  attempts: 2,    url: 'http://secure-login.phish.io/verify', payload: false, email: true },
+    ransomware: { ip: '185.220.101.45', attempts: 0,  url: '', payload: true, email: false },
+    sqli:       { ip: '192.168.1.100', attempts: 30,  url: "http://site.com/login?id=1' OR '1'='1", payload: false, email: false },
+    ddos:       { ip: '198.51.100.0',  attempts: 50000, url: '', payload: false, email: false }
+};
+
+function loadPreset(key) {
+    const p = presets[key];
+    document.getElementById('inp-ip').value = p.ip;
+    document.getElementById('inp-attempts').value = p.attempts;
+    document.getElementById('inp-url').value = p.url;
+    document.getElementById('inp-payload').checked = p.payload;
+    document.getElementById('inp-email').checked = p.email;
+}
+
+function getSeverityBadge(sev) {
+    if (sev >= 9) return '<span class="badge badge-critical">CRITICAL</span>';
+    if (sev >= 7) return '<span class="badge badge-high">HIGH</span>';
+    if (sev >= 5) return '<span class="badge badge-medium">MEDIUM</span>';
+    return '<span class="badge badge-low">LOW</span>';
+}
+
+function getCFColor(cf) {
+    if (cf >= 0.8) return '#00ff88';
+    if (cf >= 0.5) return '#00e5ff';
+    if (cf >= 0.3) return '#ffcc00';
+    return '#ff3d71';
+}
+
+async function runAnalysis() {
+    const body = {
+        ip: document.getElementById('inp-ip').value,
+        login_attempts: parseInt(document.getElementById('inp-attempts').value) || 0,
+        url: document.getElementById('inp-url').value,
+        payload: document.getElementById('inp-payload').checked,
+        email_link: document.getElementById('inp-email').checked
+    };
+
+    document.getElementById('analyze-loading').classList.remove('hidden');
+    document.getElementById('results-panel').innerHTML = '';
+
+    const resp = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+    });
+    const data = await resp.json();
+    document.getElementById('analyze-loading').classList.add('hidden');
+
+    const panel = document.getElementById('results-panel');
+    const conclusions = data.expert_system?.conclusions || [];
+
+    let html = '';
+
+    // Input Summary
+    html += `<div class="card mb-2">
+        <div class="card-title">⬡ Analysis Input</div>
+        <div class="flex flex-wrap gap-1">
+            <span class="badge badge-info">IP: ${data.input.ip || 'N/A'}</span>
+            <span class="badge badge-info">Attempts: ${data.input.login_attempts}</span>
+            ${data.input.is_suspicious_ip ? '<span class="badge badge-critical">⚠ SUSPICIOUS IP</span>' : '<span class="badge badge-low">✓ Clean IP</span>'}
+            ${data.input.is_malicious_url ? '<span class="badge badge-critical">⚠ MALICIOUS URL</span>' : ''}
+        </div>
+    </div>`;
+
+    // Expert System Results
+    if (conclusions.length === 0) {
+        html += `<div class="alert alert-success">✓ No threats detected. All indicators appear benign.</div>`;
+    } else {
+        html += `<div class="card mb-2">
+            <div class="card-title">⬡ Expert System — Forward Chaining Results (${conclusions.length} threats)</div>`;
+
+        for (const c of conclusions) {
+            const cfPct = Math.round(c.certainty_factor * 100);
+            const cfColor = getCFColor(c.certainty_factor);
+            html += `<div class="threat-item">
+                <div class="flex items-center justify-between mb-1">
+                    <div class="threat-name">${c.threat_type}</div>
+                    <div>${getSeverityBadge(c.severity)}</div>
+                </div>
+                <div class="threat-meta">
+                    <span>Rule: ${c.rule_id} — ${c.rule_name}</span>
+                    <span>Severity: ${c.severity}</span>
+                    <span>${c.is_uncertain ? '⚠ UNCERTAIN' : '✓ ' + c.cf_classification}</span>
+                </div>
+                <div class="cf-meter">
+                    <div class="cf-label">
+                        <span>Certainty Factor (MYCIN)</span>
+                        <span style="color:${cfColor}">${cfPct}% — ${c.cf_classification}</span>
+                    </div>
+                    <div class="cf-track">
+                        <div class="cf-fill" style="width:${cfPct}%;background:${cfColor};"></div>
+                    </div>
+                </div>
+                <details class="mt-1">
+                    <summary style="cursor:pointer;font-family:var(--font-mono);font-size:0.7rem;color:var(--text-secondary);">
+                        Show conditions & mitigations
+                    </summary>
+                    <div class="mt-1">
+                        <div class="text-xs text-accent mb-1">CONDITIONS:</div>
+                        ${c.explanation.map(e => `<div class="text-xs text-mono">${e}</div>`).join('')}
+                        <div class="text-xs text-accent mt-1 mb-1">MITIGATIONS:</div>
+                        <ul class="mitigation-list">
+                            ${c.mitigation.map(m => `<li>${m}</li>`).join('')}
+                        </ul>
+                    </div>
+                </details>
+            </div>`;
+        }
+        html += `</div>`;
+    }
+
+    // RDF Threats
+    if (data.rdf_threats && data.rdf_threats.length > 0) {
+        html += `<div class="card mb-2">
+            <div class="card-title">⬡ RDF Knowledge Graph — Threats from IP</div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Threat</th><th>Type</th><th>Severity</th><th>Confidence</th></tr></thead>
+                    <tbody>`;
+        for (const t of data.rdf_threats) {
+            const label = t.label || t.threat?.split('/').pop() || 'Unknown';
+            const type = t.type?.split('#').pop() || '—';
+            const sev = parseFloat(t.severity || 0).toFixed(1);
+            html += `<tr><td>${label}</td><td>${type}</td><td>${getSeverityBadge(sev)} ${sev}</td><td>${t.confidence || '—'}</td></tr>`;
+        }
+        html += `</tbody></table></div></div>`;
+    }
+
+    // BFS Results
+    if (data.bfs_related && data.bfs_related.length > 0) {
+        html += `<div class="card">
+            <div class="card-title">⬡ BFS Traversal — Connected Threats</div>
+            <div class="chain-container">`;
+        for (let i = 0; i < data.bfs_related.length; i++) {
+            const t = data.bfs_related[i];
+            html += `<div class="chain-node ${i === 0 ? 'start' : ''}">${t.label || t.uri?.split('/').pop()}</div>`;
+            if (i < data.bfs_related.length - 1) html += `<div class="chain-arrow">→</div>`;
+        }
+        html += `</div></div>`;
+    }
+
+    panel.innerHTML = html;
+}
+
+async function runBackwardChain() {
+    const goal = document.getElementById('bc-goal').value;
+    const facts = {
+        failed_login_attempts: parseInt(document.getElementById('inp-attempts').value) || 0,
+        suspicious_ip: ['185.220.', '45.33.', '203.0.', '198.51.'].some(p => document.getElementById('inp-ip').value.startsWith(p)),
+        url_is_malicious: ['phish', 'secure-login', 'verify'].some(p => document.getElementById('inp-url').value.toLowerCase().includes(p)),
+        email_contains_link: document.getElementById('inp-email').checked,
+        suspicious_payload: document.getElementById('inp-payload').checked
+    };
+
+    const resp = await fetch('/api/backward-chain', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ goal, facts })
+    });
+    const data = await resp.json();
+
+    let html = `<div class="alert ${data.found ? 'alert-danger' : 'alert-warning'}">
+        <strong>Goal: ${data.goal}</strong><br>
+        ${data.message}
+    </div>`;
+
+    for (const rule of (data.rules_checked || [])) {
+        html += `<div class="text-xs text-mono" style="margin-bottom:0.5rem;">
+            <span class="text-accent">${rule.rule_id}</span> — ${rule.rule_name}<br>
+            ✓ Satisfied: ${rule.satisfied_conditions.join(', ') || 'None'}<br>
+            ✗ Missing: ${rule.unsatisfied_conditions.join(', ') || 'None'}
+        </div>`;
+    }
+
+    document.getElementById('bc-result').innerHTML = html;
+}
+</script>
+{% endblock %}

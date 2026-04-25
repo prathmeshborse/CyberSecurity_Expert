@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CyberSec KG{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="scan-line"></div>
+    <div class="grid-bg"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <span class="brand-icon">◈</span>
+            <span class="brand-text">CYBER<span class="accent">SEC</span>·KG</span>
+        </div>
+        <div class="nav-links">
+            <a href="/" class="nav-link {% if request.path == '/' %}active{% endif %}">
+                <span class="nav-icon">⬡</span> Home
+            </a>
+            <a href="/analyzer" class="nav-link {% if request.path == '/analyzer' %}active{% endif %}">
+                <span class="nav-icon">⬡</span> Analyzer
+            </a>
+            <a href="/query" class="nav-link {% if request.path == '/query' %}active{% endif %}">
+                <span class="nav-icon">⬡</span> SPARQL
+            </a>
+            <a href="/recommendations" class="nav-link {% if request.path == '/recommendations' %}active{% endif %}">
+                <span class="nav-icon">⬡</span> A* Search
+            </a>
+            <a href="/graph" class="nav-link {% if request.path == '/graph' %}active{% endif %}">
+                <span class="nav-icon">⬡</span> Graph
+            </a>
+            <a href="/csp" class="nav-link {% if request.path == '/csp' %}active{% endif %}">
+                <span class="nav-icon">⬡</span> CSP
+            </a>
+        </div>
+        <div class="nav-status">
+            <span class="status-dot"></span>
+            <span class="status-text">SYSTEM ONLINE</span>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <span>INTELLIGENT CYBER SECURITY KNOWLEDGE SYSTEM</span>
+        <span class="footer-sep">//</span>
+        <span>OWL · RDF · SPARQL · A* · CSP · MYCIN</span>
+        <span class="footer-sep">//</span>
+        <span id="footer-time"></span>
+    </footer>
+
+    <script>
+        // Update footer time
+        function updateTime() {
+            document.getElementById('footer-time').textContent = new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

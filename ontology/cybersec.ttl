@@ -1,0 +1,511 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix cs: <http://cybersec.kg/ontology#> .
+@prefix ex: <http://cybersec.kg/instance#> .
+
+# ============================================================
+# OWL ONTOLOGY: Intelligent Cyber Security Knowledge System
+# ============================================================
+
+cs: a owl:Ontology ;
+    rdfs:label "Cyber Security Knowledge Ontology" ;
+    rdfs:comment "Ontology for representing cyber threats, vulnerabilities, and mitigations" .
+
+# ============================================================
+# CLASSES
+# ============================================================
+
+cs:SecurityEvent a owl:Class ;
+    rdfs:label "Security Event" ;
+    rdfs:comment "An observed security activity or log event" .
+
+cs:Threat a owl:Class ;
+    rdfs:label "Threat" ;
+    rdfs:comment "A cyber security threat or attack" .
+
+cs:Malware a owl:Class ;
+    rdfs:subClassOf cs:Threat ;
+    rdfs:label "Malware" .
+
+cs:Ransomware a owl:Class ;
+    rdfs:subClassOf cs:Malware ;
+    rdfs:label "Ransomware" .
+
+cs:Trojan a owl:Class ;
+    rdfs:subClassOf cs:Malware ;
+    rdfs:label "Trojan" .
+
+cs:Spyware a owl:Class ;
+    rdfs:subClassOf cs:Malware ;
+    rdfs:label "Spyware" .
+
+cs:PhishingAttack a owl:Class ;
+    rdfs:subClassOf cs:Threat ;
+    rdfs:label "Phishing Attack" .
+
+cs:SpearPhishing a owl:Class ;
+    rdfs:subClassOf cs:PhishingAttack ;
+    rdfs:label "Spear Phishing" .
+
+cs:BruteForceAttack a owl:Class ;
+    rdfs:subClassOf cs:Threat ;
+    rdfs:label "Brute Force Attack" .
+
+cs:SQLInjection a owl:Class ;
+    rdfs:subClassOf cs:Threat ;
+    rdfs:label "SQL Injection" .
+
+cs:DDoSAttack a owl:Class ;
+    rdfs:subClassOf cs:Threat ;
+    rdfs:label "DDoS Attack" .
+
+cs:ZeroDay a owl:Class ;
+    rdfs:subClassOf cs:Threat ;
+    rdfs:label "Zero Day Exploit" .
+
+cs:ManInTheMiddle a owl:Class ;
+    rdfs:subClassOf cs:Threat ;
+    rdfs:label "Man In The Middle Attack" .
+
+cs:Vulnerability a owl:Class ;
+    rdfs:label "Vulnerability" ;
+    rdfs:comment "A weakness in a system that can be exploited" .
+
+cs:System a owl:Class ;
+    rdfs:label "System" ;
+    rdfs:comment "A computer system or network" .
+
+cs:User a owl:Class ;
+    rdfs:label "User" .
+
+cs:IPAddress a owl:Class ;
+    rdfs:label "IP Address" .
+
+cs:IndicatorOfCompromise a owl:Class ;
+    rdfs:label "Indicator of Compromise" .
+
+cs:Mitigation a owl:Class ;
+    rdfs:label "Mitigation" ;
+    rdfs:comment "A security measure to mitigate a threat" .
+
+# ============================================================
+# OBJECT PROPERTIES
+# ============================================================
+
+cs:targetsVulnerability a owl:ObjectProperty ;
+    rdfs:domain cs:Threat ;
+    rdfs:range cs:Vulnerability ;
+    rdfs:label "targets vulnerability" .
+
+cs:originatesFromIP a owl:ObjectProperty ;
+    rdfs:domain cs:SecurityEvent ;
+    rdfs:range cs:IPAddress ;
+    rdfs:label "originates from IP" .
+
+cs:affectsSystem a owl:ObjectProperty ;
+    rdfs:domain cs:Threat ;
+    rdfs:range cs:System ;
+    rdfs:label "affects system" .
+
+cs:performedBy a owl:ObjectProperty ;
+    rdfs:domain cs:SecurityEvent ;
+    rdfs:range cs:User ;
+    rdfs:label "performed by" .
+
+cs:hasIndicator a owl:ObjectProperty ;
+    rdfs:domain cs:SecurityEvent ;
+    rdfs:range cs:IndicatorOfCompromise ;
+    rdfs:label "has indicator" .
+
+cs:mitigatedBy a owl:ObjectProperty ;
+    rdfs:domain cs:Threat ;
+    rdfs:range cs:Mitigation ;
+    rdfs:label "mitigated by" .
+
+cs:indicatesThreat a owl:ObjectProperty ;
+    rdfs:domain cs:IndicatorOfCompromise ;
+    rdfs:range cs:Threat ;
+    rdfs:label "indicates threat" .
+
+cs:classifiedAsThreat a owl:ObjectProperty ;
+    rdfs:domain cs:SecurityEvent ;
+    rdfs:range cs:Threat ;
+    rdfs:label "classified as threat" .
+
+cs:classifiedAsThreat
+    owl:propertyChainAxiom ( cs:hasIndicator cs:indicatesThreat ) .
+
+cs:relatedTo a owl:ObjectProperty ;
+    rdfs:domain cs:Threat ;
+    rdfs:range cs:Threat ;
+    rdfs:label "related to" .
+
+cs:exploitsVulnerability a owl:ObjectProperty ;
+    rdfs:domain cs:Threat ;
+    rdfs:range cs:Vulnerability ;
+    rdfs:label "exploits vulnerability" .
+
+# ============================================================
+# DATA PROPERTIES
+# ============================================================
+
+cs:severityScore a owl:DatatypeProperty ;
+    rdfs:domain cs:Threat ;
+    rdfs:range xsd:float ;
+    rdfs:label "severity score" .
+
+cs:timestamp a owl:DatatypeProperty ;
+    rdfs:domain cs:SecurityEvent ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "timestamp" .
+
+cs:attemptCount a owl:DatatypeProperty ;
+    rdfs:domain cs:SecurityEvent ;
+    rdfs:range xsd:integer ;
+    rdfs:label "attempt count" .
+
+cs:confidenceScore a owl:DatatypeProperty ;
+    rdfs:domain cs:SecurityEvent ;
+    rdfs:range xsd:float ;
+    rdfs:label "confidence score" .
+
+cs:ipValue a owl:DatatypeProperty ;
+    rdfs:domain cs:IPAddress ;
+    rdfs:range xsd:string ;
+    rdfs:label "IP value" .
+
+cs:description a owl:DatatypeProperty ;
+    rdfs:domain cs:Threat ;
+    rdfs:range xsd:string ;
+    rdfs:label "description" .
+
+cs:mitigationType a owl:DatatypeProperty ;
+    rdfs:domain cs:Mitigation ;
+    rdfs:range xsd:string ;
+    rdfs:label "mitigation type" .
+
+cs:cvssScore a owl:DatatypeProperty ;
+    rdfs:domain cs:Vulnerability ;
+    rdfs:range xsd:float ;
+    rdfs:label "CVSS score" .
+    
+cs:affectsSystem rdfs:domain cs:SecurityEvent .
+
+# ============================================================
+# IP ADDRESS INSTANCES
+# ============================================================
+
+ex:IP_192_168_1_100 a cs:IPAddress ; cs:ipValue "192.168.1.100" .
+ex:IP_10_0_0_55 a cs:IPAddress ; cs:ipValue "10.0.0.55" .
+ex:IP_203_0_113_5 a cs:IPAddress ; cs:ipValue "203.0.113.5" .
+ex:IP_185_220_101_45 a cs:IPAddress ; cs:ipValue "185.220.101.45" .
+ex:IP_45_33_32_156 a cs:IPAddress ; cs:ipValue "45.33.32.156" .
+ex:IP_198_51_100_0 a cs:IPAddress ; cs:ipValue "198.51.100.0" .
+ex:IP_172_16_0_1 a cs:IPAddress ; cs:ipValue "172.16.0.1" .
+
+# ============================================================
+# VULNERABILITY INSTANCES
+# ============================================================
+
+ex:Vuln_CVE2021_44228 a cs:Vulnerability ;
+    rdfs:label "Log4Shell CVE-2021-44228" ;
+    cs:cvssScore "10.0"^^xsd:float .
+
+ex:Vuln_CVE2022_30190 a cs:Vulnerability ;
+    rdfs:label "Follina CVE-2022-30190" ;
+    cs:cvssScore "7.8"^^xsd:float .
+
+ex:Vuln_WeakPassword a cs:Vulnerability ;
+    rdfs:label "Weak Password Policy" ;
+    cs:cvssScore "6.5"^^xsd:float .
+
+ex:Vuln_SQLInput a cs:Vulnerability ;
+    rdfs:label "Unvalidated SQL Input" ;
+    cs:cvssScore "9.1"^^xsd:float .
+
+ex:Vuln_OpenPort a cs:Vulnerability ;
+    rdfs:label "Open Port 22 SSH" ;
+    cs:cvssScore "5.3"^^xsd:float .
+
+ex:Vuln_OutdatedSSL a cs:Vulnerability ;
+    rdfs:label "Outdated TLS 1.0" ;
+    cs:cvssScore "7.4"^^xsd:float .
+
+# ============================================================
+# SYSTEM INSTANCES
+# ============================================================
+
+ex:Sys_WebServer a cs:System ; rdfs:label "Web Server" .
+ex:Sys_Database a cs:System ; rdfs:label "Database Server" .
+ex:Sys_MailServer a cs:System ; rdfs:label "Mail Server" .
+ex:Sys_Firewall a cs:System ; rdfs:label "Firewall" .
+ex:Sys_ActiveDirectory a cs:System ; rdfs:label "Active Directory" .
+ex:Sys_Workstation1 a cs:System ; rdfs:label "Workstation-01" .
+
+# ============================================================
+# MITIGATION INSTANCES
+# ============================================================
+
+ex:Mit_Patching a cs:Mitigation ;
+    rdfs:label "Patch Management" ;
+    cs:mitigationType "Preventive" .
+
+ex:Mit_MFA a cs:Mitigation ;
+    rdfs:label "Multi-Factor Authentication" ;
+    cs:mitigationType "Preventive" .
+
+ex:Mit_Firewall a cs:Mitigation ;
+    rdfs:label "Firewall Rules" ;
+    cs:mitigationType "Preventive" .
+
+ex:Mit_AV a cs:Mitigation ;
+    rdfs:label "Antivirus Software" ;
+    cs:mitigationType "Detective" .
+
+ex:Mit_IDS a cs:Mitigation ;
+    rdfs:label "Intrusion Detection System" ;
+    cs:mitigationType "Detective" .
+
+ex:Mit_EmailFilter a cs:Mitigation ;
+    rdfs:label "Email Filtering" ;
+    cs:mitigationType "Preventive" .
+
+ex:Mit_Training a cs:Mitigation ;
+    rdfs:label "Security Awareness Training" ;
+    cs:mitigationType "Preventive" .
+
+ex:Mit_Backup a cs:Mitigation ;
+    rdfs:label "Regular Backups" ;
+    cs:mitigationType "Recovery" .
+
+ex:Mit_Encryption a cs:Mitigation ;
+    rdfs:label "Data Encryption" ;
+    cs:mitigationType "Preventive" .
+
+ex:Mit_WAF a cs:Mitigation ;
+    rdfs:label "Web Application Firewall" ;
+    cs:mitigationType "Preventive" .
+
+# ============================================================
+# INDICATOR OF COMPROMISE INSTANCES
+# ============================================================
+
+ex:IOC_SuspiciousLogin a cs:IndicatorOfCompromise ;
+    rdfs:label "Multiple Failed Login Attempts" .
+
+ex:IOC_MaliciousURL a cs:IndicatorOfCompromise ;
+    rdfs:label "Malicious URL in Email" .
+
+ex:IOC_UnusualTraffic a cs:IndicatorOfCompromise ;
+    rdfs:label "Unusual Network Traffic" .
+
+ex:IOC_SuspiciousPayload a cs:IndicatorOfCompromise ;
+    rdfs:label "Suspicious File Payload" .
+
+ex:IOC_DataExfil a cs:IndicatorOfCompromise ;
+    rdfs:label "Data Exfiltration Pattern" .
+
+# ============================================================
+# THREAT INSTANCES (40+ realistic threats)
+# ============================================================
+
+ex:T001 a cs:Ransomware ;
+    rdfs:label "WannaCry Ransomware" ;
+    cs:description "Ransomware exploiting EternalBlue SMB vulnerability" ;
+    cs:severityScore "9.5"^^xsd:float ;
+    cs:targetsVulnerability ex:Vuln_CVE2021_44228 ;
+    cs:affectsSystem ex:Sys_WebServer ;
+    cs:mitigatedBy ex:Mit_Patching, ex:Mit_Backup .
+
+ex:T002 a cs:PhishingAttack ;
+    rdfs:label "Corporate Credential Phishing" ;
+    cs:description "Phishing email with fake login page targeting corporate users" ;
+    cs:severityScore "7.5"^^xsd:float ;
+    cs:targetsVulnerability ex:Vuln_WeakPassword ;
+    cs:affectsSystem ex:Sys_MailServer ;
+    cs:mitigatedBy ex:Mit_EmailFilter, ex:Mit_Training .
+
+ex:T003 a cs:BruteForceAttack ;
+    rdfs:label "SSH Brute Force Attack" ;
+    cs:description "Automated brute force attack on SSH port 22" ;
+    cs:severityScore "6.8"^^xsd:float ;
+    cs:targetsVulnerability ex:Vuln_OpenPort ;
+    cs:affectsSystem ex:Sys_WebServer ;
+    cs:mitigatedBy ex:Mit_MFA, ex:Mit_Firewall .
+
+ex:T004 a cs:SQLInjection ;
+    rdfs:label "Database SQL Injection" ;
+    cs:description "SQL injection targeting login form to bypass authentication" ;
+    cs:severityScore "9.1"^^xsd:float ;
+    cs:targetsVulnerability ex:Vuln_SQLInput ;
+    cs:affectsSystem ex:Sys_Database ;
+    cs:mitigatedBy ex:Mit_WAF .
+
+ex:T005 a cs:DDoSAttack ;
+    rdfs:label "HTTP Flood DDoS" ;
+    cs:description "HTTP flood DDoS overwhelming web server resources" ;
+    cs:severityScore "8.2"^^xsd:float ;
+    cs:affectsSystem ex:Sys_WebServer ;
+    cs:mitigatedBy ex:Mit_Firewall, ex:Mit_IDS .
+
+ex:T006 a cs:ZeroDay ;
+    rdfs:label "Log4Shell Exploit" ;
+    cs:description "Zero-day exploit targeting Log4j JNDI lookup vulnerability" ;
+    cs:severityScore "10.0"^^xsd:float ;
+    cs:targetsVulnerability ex:Vuln_CVE2021_44228 ;
+    cs:affectsSystem ex:Sys_WebServer ;
+    cs:mitigatedBy ex:Mit_Patching .
+
+ex:T007 a cs:Trojan ;
+    rdfs:label "Remote Access Trojan" ;
+    cs:description "RAT disguised as legitimate software update" ;
+    cs:severityScore "8.5"^^xsd:float ;
+    cs:targetsVulnerability ex:Vuln_CVE2022_30190 ;
+    cs:affectsSystem ex:Sys_Workstation1 ;
+    cs:mitigatedBy ex:Mit_AV, ex:Mit_Patching .
+
+ex:T008 a cs:SpearPhishing ;
+    rdfs:label "CEO Fraud Spear Phishing" ;
+    cs:description "Targeted spear-phishing impersonating CEO for wire transfer" ;
+    cs:severityScore "8.8"^^xsd:float ;
+    cs:targetsVulnerability ex:Vuln_WeakPassword ;
+    cs:affectsSystem ex:Sys_MailServer ;
+    cs:mitigatedBy ex:Mit_Training, ex:Mit_EmailFilter .
+
+ex:T009 a cs:ManInTheMiddle ;
+    rdfs:label "TLS Downgrade Attack" ;
+    cs:description "MITM attack forcing TLS 1.0 downgrade to intercept traffic" ;
+    cs:severityScore "7.9"^^xsd:float ;
+    cs:targetsVulnerability ex:Vuln_OutdatedSSL ;
+    cs:affectsSystem ex:Sys_WebServer ;
+    cs:mitigatedBy ex:Mit_Encryption .
+
+ex:T010 a cs:Spyware ;
+    rdfs:label "Keylogger Spyware" ;
+    cs:description "Keylogger capturing credentials and sensitive data" ;
+    cs:severityScore "7.2"^^xsd:float ;
+    cs:targetsVulnerability ex:Vuln_WeakPassword ;
+    cs:affectsSystem ex:Sys_Workstation1 ;
+    cs:mitigatedBy ex:Mit_AV, ex:Mit_MFA .
+
+ex:T011 a cs:BruteForceAttack ;
+    rdfs:label "RDP Brute Force" ;
+    cs:description "Brute force against Remote Desktop Protocol" ;
+    cs:severityScore "7.0"^^xsd:float ;
+    cs:targetsVulnerability ex:Vuln_WeakPassword ;
+    cs:affectsSystem ex:Sys_Workstation1 ;
+    cs:mitigatedBy ex:Mit_MFA, ex:Mit_Firewall .
+
+ex:T012 a cs:Ransomware ;
+    rdfs:label "LockBit Ransomware" ;
+    cs:description "LockBit 3.0 ransomware encrypting critical files" ;
+    cs:severityScore "9.8"^^xsd:float ;
+    cs:targetsVulnerability ex:Vuln_CVE2021_44228 ;
+    cs:affectsSystem ex:Sys_Database ;
+    cs:mitigatedBy ex:Mit_Backup, ex:Mit_AV .
+
+ex:T013 a cs:PhishingAttack ;
+    rdfs:label "Banking Phishing Campaign" ;
+    cs:description "Fake banking website stealing financial credentials" ;
+    cs:severityScore "7.8"^^xsd:float ;
+    cs:targetsVulnerability ex:Vuln_WeakPassword ;
+    cs:affectsSystem ex:Sys_MailServer ;
+    cs:mitigatedBy ex:Mit_EmailFilter, ex:Mit_Training .
+
+ex:T014 a cs:SQLInjection ;
+    rdfs:label "Blind SQL Injection" ;
+    cs:description "Blind SQL injection extracting database schema" ;
+    cs:severityScore "8.7"^^xsd:float ;
+    cs:targetsVulnerability ex:Vuln_SQLInput ;
+    cs:affectsSystem ex:Sys_Database ;
+    cs:mitigatedBy ex:Mit_WAF, ex:Mit_Patching .
+
+ex:T015 a cs:ZeroDay ;
+    rdfs:label "Follina MS-MSDT Exploit" ;
+    cs:description "Zero-day in Microsoft Support Diagnostic Tool" ;
+    cs:severityScore "9.3"^^xsd:float ;
+    cs:targetsVulnerability ex:Vuln_CVE2022_30190 ;
+    cs:affectsSystem ex:Sys_Workstation1 ;
+    cs:mitigatedBy ex:Mit_Patching .
+
+ex:T016 a cs:Trojan ;
+    rdfs:label "Banking Trojan Emotet" ;
+    cs:description "Emotet banking trojan delivered via malicious macro" ;
+    cs:severityScore "8.9"^^xsd:float ;
+    cs:targetsVulnerability ex:Vuln_WeakPassword ;
+    cs:affectsSystem ex:Sys_Workstation1 ;
+    cs:mitigatedBy ex:Mit_AV, ex:Mit_EmailFilter .
+
+ex:T017 a cs:DDoSAttack ;
+    rdfs:label "DNS Amplification Attack" ;
+    cs:description "DNS amplification DDoS using open resolvers" ;
+    cs:severityScore "8.0"^^xsd:float ;
+    cs:affectsSystem ex:Sys_WebServer ;
+    cs:mitigatedBy ex:Mit_Firewall .
+
+ex:T018 a cs:ManInTheMiddle ;
+    rdfs:label "ARP Spoofing Attack" ;
+    cs:description "ARP spoofing to intercept local network traffic" ;
+    cs:severityScore "7.5"^^xsd:float ;
+    cs:targetsVulnerability ex:Vuln_OpenPort ;
+    cs:affectsSystem ex:Sys_Firewall ;
+    cs:mitigatedBy ex:Mit_Encryption, ex:Mit_IDS .
+
+ex:T019 a cs:Spyware ;
+    rdfs:label "Pegasus-like Spyware" ;
+    cs:description "Advanced persistent spyware targeting mobile and desktop" ;
+    cs:severityScore "9.7"^^xsd:float ;
+    cs:targetsVulnerability ex:Vuln_CVE2022_30190 ;
+    cs:affectsSystem ex:Sys_Workstation1 ;
+    cs:mitigatedBy ex:Mit_Patching, ex:Mit_MFA .
+
+ex:T020 a cs:BruteForceAttack ;
+    rdfs:label "FTP Credential Stuffing" ;
+    cs:description "Credential stuffing attack against FTP server" ;
+    cs:severityScore "6.5"^^xsd:float ;
+    cs:targetsVulnerability ex:Vuln_WeakPassword ;
+    cs:affectsSystem ex:Sys_WebServer ;
+    cs:mitigatedBy ex:Mit_MFA .
+
+# SECURITY EVENT INSTANCES
+
+ex:E001 a cs:SecurityEvent ;
+    cs:hasIndicator ex:IOC_SuspiciousLogin ;
+    cs:originatesFromIP ex:IP_45_33_32_156 ;
+    cs:attemptCount "5000"^^xsd:integer ;
+    cs:confidenceScore "0.92"^^xsd:float .
+
+ex:E002 a cs:SecurityEvent ;
+    cs:hasIndicator ex:IOC_MaliciousURL ;
+    cs:originatesFromIP ex:IP_203_0_113_5 ;
+    cs:confidenceScore "0.88"^^xsd:float .
+
+ex:E003 a cs:SecurityEvent ;
+    cs:hasIndicator ex:IOC_UnusualTraffic ;
+    cs:originatesFromIP ex:IP_198_51_100_0 ;
+    cs:confidenceScore "0.85"^^xsd:float .
+    
+# Related-to connections
+ex:T001 cs:relatedTo ex:T012 .
+ex:T002 cs:relatedTo ex:T008 .
+ex:T002 cs:relatedTo ex:T013 .
+ex:T003 cs:relatedTo ex:T011 .
+ex:T003 cs:relatedTo ex:T020 .
+ex:T004 cs:relatedTo ex:T014 .
+ex:T006 cs:relatedTo ex:T015 .
+ex:T007 cs:relatedTo ex:T016 .
+ex:T009 cs:relatedTo ex:T018 .
+
+# ex:IOC_SuspiciousLogin cs:indicatesThreat ex:T003 .
+# ex:IOC_MaliciousURL cs:indicatesThreat ex:T002 .
+# ex:IOC_UnusualTraffic cs:indicatesThreat ex:T005 .
+# ex:IOC_SuspiciousPayload cs:indicatesThreat ex:T001 .
+# ex:IOC_DataExfil cs:indicatesThreat ex:T010 .
+
+ex:IOC_SuspiciousLogin cs:indicatesThreat cs:BruteForceAttack .
+ex:IOC_MaliciousURL cs:indicatesThreat cs:PhishingAttack .
+ex:IOC_UnusualTraffic cs:indicatesThreat cs:DDoSAttack .
+ex:IOC_SuspiciousPayload cs:indicatesThreat cs:Malware .
+ex:IOC_DataExfil cs:indicatesThreat cs:Spyware .

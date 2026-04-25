@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block title %}SPARQL Query Interface — CyberSec KG{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-tag">Module 2 — OWL Ontology + SPARQL</div>
+    <div class="page-title">SPARQL <span>Query Interface</span></div>
+    <div class="page-subtitle">Query the RDF knowledge graph using SPARQL. Use predefined templates or write your own.</div>
+</div>
+
+<div class="sidebar-layout">
+    <!-- Query Panel -->
+    <div>
+        <div class="card">
+            <div class="card-title">⬡ Query Templates</div>
+            <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                <button class="btn btn-outline btn-sm" onclick="loadTemplate('all_phishing')">🎣 All Phishing Attacks</button>
+                <button class="btn btn-outline btn-sm" onclick="loadTemplate('all_malware')">🦠 All Malware Threats</button>
+                <button class="btn btn-outline btn-sm" onclick="loadTemplate('high_severity')">🔥 High Severity (≥9.0)</button>
+                <button class="btn btn-outline btn-sm" onclick="loadTemplate('threat_count_by_type')">📊 Group by Type</button>
+                <button class="btn btn-outline btn-sm" onclick="loadTemplate('property_chain')">🔗 Property Chain Inferences</button>
+            </div>
+
+            <hr class="divider">
+            <div class="card-title">⬡ Direct Query APIs</div>
+            <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                <button class="btn btn-outline btn-sm" onclick="quickQuery('brute')">🔓 Brute Force Attacks</button>
+                <button class="btn btn-outline btn-sm" onclick="quickQuery('high')">⚡ High Severity Threats</button>
+                <button class="btn btn-outline btn-sm" onclick="quickQuery('cats')">📁 Categories Summary</button>
+            </div>
+
+            <hr class="divider">
+            <div class="form-group">
+                <label class="form-label">Filter by IP Address</label>
+                <input type="text" id="filter-ip" class="form-control" placeholder="e.g. 185.220.101.45">
+                <button class="btn btn-outline btn-sm mt-1" onclick="queryByIP()">🔍 Find Threats from IP</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Editor + Results -->
+    <div>
+        <div class="card mb-2">
+            <div class="card-title">⬡ SPARQL Editor</div>
+            <textarea id="sparql-editor" class="code-block" rows="10">PREFIX cs: &lt;http://cybersec.kg/ontology#&gt;
+PREFIX rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt;
+PREFIX rdf: &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#&gt;
+SELECT ?threat ?label ?severity WHERE {
+    ?threat rdfs:label ?label .
+    ?threat cs:severityScore ?severity .
+    FILTER(?severity &gt;= 8.0)
+}
+ORDER BY DESC(?severity)</textarea>
+            <div class="mt-2">
+                <button class="btn btn-primary" onclick="runQuery()">▶ Execute Query</button>
+                <button class="btn btn-outline" onclick="clearResults()" style="margin-left:0.5rem;">✕ Clear</button>
+            </div>
+        </div>
+
+        <div id="query-loading" class="hidden">
+            <div class="loading"><div class="spinner"></div>Executing SPARQL query...</div>
+        </div>
+
+        <div id="query-results"></div>
+    </div>
+</div>
+
+<!-- Ontology Structure Info -->
+<div class="card mt-2">
+    <div class="card-title">⬡ Ontology Structure Reference</div>
+    <div class="three-col">
+        <div>
+            <div class="text-xs text-accent mb-1" style="letter-spacing:2px;">OWL CLASSES</div>
+            <div class="code-block" style="font-size:0.7rem;padding:0.8rem;">
+cs:Threat
+  ├─ cs:Malware
+  │   ├─ cs:Ransomware
+  │   ├─ cs:Trojan
+  │   └─ cs:Spyware
+  ├─ cs:PhishingAttack
+  │   └─ cs:SpearPhishing
+  ├─ cs:BruteForceAttack
+  ├─ cs:SQLInjection
+  ├─ cs:DDoSAttack
+  ├─ cs:ZeroDay
+  └─ cs:ManInTheMiddle
+cs:Vulnerability
+cs:System
+cs:IPAddress
+cs:Mitigation
+cs:IndicatorOfCompromise</div>
+        </div>
+        <div>
+            <div class="text-xs text-accent mb-1" style="letter-spacing:2px;">OBJECT PROPERTIES</div>
+            <div class="code-block" style="font-size:0.7rem;padding:0.8rem;">
+cs:targetsVulnerability
+cs:originatesFromIP
+cs:affectsSystem
+cs:performedBy
+cs:hasIndicator
+cs:mitigatedBy
+cs:indicatesThreat
+cs:classifiedAsThreat
+cs:relatedTo
+cs:exploitsVulnerability</div>
+        </div>
+        <div>
+            <div class="text-xs text-accent mb-1" style="letter-spacing:2px;">PROPERTY CHAIN RULE</div>
+            <div class="code-block" style="font-size:0.7rem;padding:0.8rem;">
+hasIndicator ∘ indicatesThreat
+    → classifiedAsThreat
+
+Example inference:
+T001 hasIndicator IOC_SuspiciousPayload
+IOC_SuspiciousPayload indicatesThreat T001
+∴ T001 classifiedAsThreat T001
+
+DATA PROPERTIES:
+cs:severityScore (xsd:float)
+cs:timestamp (xsd:dateTime)
+cs:attemptCount (xsd:integer)
+cs:confidenceScore (xsd:float)</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let templates = {};
+
+fetch('/api/queries/templates').then(r => r.json()).then(d => {
+    templates = d;
+});
+
+function loadTemplate(key) {
+    if (templates[key]) {
+        document.getElementById('sparql-editor').value = templates[key];
+    }
+}
+
+async function runQuery() {
+    const query = document.getElementById('sparql-editor').value;
+    document.getElementById('query-loading').classList.remove('hidden');
+    document.getElementById('query-results').innerHTML = '';
+
+    const resp = await fetch('/api/sparql', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ query })
+    });
+    const data = await resp.json();
+    document.getElementById('query-loading').classList.add('hidden');
+
+    renderResults(data.results || [], `SPARQL Results (${data.count} rows)`);
+}
+
+async function quickQuery(type) {
+    let url = '/api/threats/all';
+    let title = 'All Threats';
+    if (type === 'brute') { url = '/api/threats/brute-force'; title = 'Brute Force Attacks'; }
+    if (type === 'high')  { url = '/api/threats/high-severity?threshold=8.0'; title = 'High Severity Threats'; }
+    if (type === 'cats')  { url = '/api/threats/categories'; title = 'Threat Categories'; }
+
+    document.getElementById('query-loading').classList.remove('hidden');
+    const resp = await fetch(url);
+    const data = await resp.json();
+    document.getElementById('query-loading').classList.add('hidden');
+
+    const arr = Array.isArray(data) ? data : Object.entries(data).map(([k, v]) => ({ category: k, ...v }));
+    renderResults(arr, title);
+}
+
+async function queryByIP() {
+    const ip = document.getElementById('filter-ip').value;
+    if (!ip) return;
+    document.getElementById('query-loading').classList.remove('hidden');
+    const resp = await fetch(`/api/threats/by-ip?ip=${encodeURIComponent(ip)}`);
+    const data = await resp.json();
+    document.getElementById('query-loading').classList.add('hidden');
+    renderResults(data, `Threats from IP: ${ip}`);
+}
+
+function renderResults(results, title) {
+    const div = document.getElementById('query-results');
+    if (!results || results.length === 0) {
+        div.innerHTML = '<div class="alert alert-warning">No results returned.</div>';
+        return;
+    }
+
+    const keys = Object.keys(results[0]);
+    let html = `<div class="card">
+        <div class="card-title">⬡ ${title}</div>
+        <div class="text-xs text-dim text-mono mb-2">${results.length} row(s) returned</div>
+        <div class="table-container">
+        <table><thead><tr>${keys.map(k => `<th>${k}</th>`).join('')}</tr></thead><tbody>`;
+
+    for (const row of results) {
+        html += '<tr>';
+        for (const k of keys) {
+            let val = row[k] || '—';
+            // Shorten URIs
+            val = String(val).replace('http://cybersec.kg/ontology#', 'cs:').replace('http://cybersec.kg/instance#', 'ex:').replace('http://www.w3.org/2002/07/owl#', 'owl:');
+            // Color severity
+            if (k === 'severity' && !isNaN(parseFloat(val))) {
+                const s = parseFloat(val);
+                const badge = s >= 9 ? 'badge-critical' : s >= 7 ? 'badge-high' : s >= 5 ? 'badge-medium' : 'badge-low';
+                val = `<span class="badge ${badge}">${parseFloat(val).toFixed(1)}</span>`;
+            }
+            html += `<td>${val}</td>`;
+        }
+        html += '</tr>';
+    }
+    html += '</tbody></table></div></div>';
+    div.innerHTML = html;
+}
+
+function clearResults() {
+    document.getElementById('query-results').innerHTML = '';
+}
+</script>
+{% endblock %}

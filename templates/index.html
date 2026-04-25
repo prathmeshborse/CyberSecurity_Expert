@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block title %}Intelligent Cyber Security Knowledge System{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <div class="hero-icon">◈</div>
+    <div class="hero-title">
+        Intelligent <span class="accent">Cyber Security</span><br>Knowledge System
+    </div>
+    <p class="hero-subtitle">
+        An AI-powered knowledge system using OWL Ontology, RDF Knowledge Graph,
+        SPARQL Reasoning, BFS/DFS/A* Search, Expert System Rules, CSP Solver,
+        and MYCIN-style Certainty Factors.
+    </p>
+</div>
+
+<!-- Live Stats -->
+<div class="stat-grid" id="stat-grid">
+    <div class="stat-card">
+        <div class="stat-value" id="stat-triples">—</div>
+        <div class="stat-label">RDF Triples</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="stat-threats">—</div>
+        <div class="stat-label">Threat Instances</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="stat-severity">—</div>
+        <div class="stat-label">Avg Severity</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="stat-mitigations">—</div>
+        <div class="stat-label">Mitigations</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value accent">6</div>
+        <div class="stat-label">AI Modules</div>
+    </div>
+</div>
+
+<!-- Agent Design Overview -->
+<div class="card mb-2">
+    <div class="card-title">⬡ Module 1 — Intelligent Agent Design (PEAS)</div>
+    <div class="peas-grid">
+        <div class="peas-card perf">
+            <div class="peas-title">⚡ Performance Measure</div>
+            <ul class="mitigation-list">
+                <li>Accurate threat detection rate</li>
+                <li>Minimum false positives</li>
+                <li>Correct ontological inference</li>
+                <li>Certainty factor reliability</li>
+            </ul>
+        </div>
+        <div class="peas-card env">
+            <div class="peas-title">🌐 Environment</div>
+            <ul class="mitigation-list">
+                <li>RDF/OWL Knowledge Graph</li>
+                <li>SPARQL query interface</li>
+                <li>User-provided threat indicators</li>
+                <li>Network logs and IP data</li>
+            </ul>
+        </div>
+        <div class="peas-card act">
+            <div class="peas-title">⚙ Actuators</div>
+            <ul class="mitigation-list">
+                <li>Return detected threat type</li>
+                <li>Suggest mitigation strategies</li>
+                <li>Trigger CSP security planner</li>
+                <li>Generate inference explanation</li>
+            </ul>
+        </div>
+        <div class="peas-card sens">
+            <div class="peas-title">📡 Sensors</div>
+            <ul class="mitigation-list">
+                <li>Input IP addresses</li>
+                <li>Login attempt counts</li>
+                <li>URLs and email indicators</li>
+                <li>Payload and traffic flags</li>
+            </ul>
+        </div>
+    </div>
+
+    <hr class="divider">
+    <div class="card-title">⬡ Environment Classification & State Space</div>
+    <div class="two-col">
+        <div>
+            <div class="text-xs text-accent mb-1" style="letter-spacing:2px;">ENVIRONMENT TYPE</div>
+            <div class="flex flex-wrap gap-1">
+                <span class="badge badge-info">Partially Observable</span>
+                <span class="badge badge-info">Deterministic</span>
+                <span class="badge badge-info">Episodic</span>
+                <span class="badge badge-info">Static</span>
+                <span class="badge badge-info">Discrete</span>
+            </div>
+        </div>
+        <div>
+            <div class="text-xs text-accent mb-1" style="letter-spacing:2px;">STATE SPACE NODES</div>
+            <div class="flex flex-wrap gap-1">
+                <span class="badge badge-critical">Threat</span>
+                <span class="badge badge-high">IP Address</span>
+                <span class="badge badge-medium">Vulnerability</span>
+                <span class="badge badge-low">System</span>
+                <span class="badge badge-info">User</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Domain Mapping -->
+<div class="card mb-2">
+    <div class="card-title">⬡ Domain Mapping: Museum → Cyber Security</div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr><th>Museum Concept</th><th>Cyber Security Concept</th><th>Examples</th></tr>
+            </thead>
+            <tbody>
+                <tr><td class="text-accent">Artefact</td><td>Threat / Attack</td><td>WannaCry, Log4Shell, SQL Injection</td></tr>
+                <tr><td class="text-accent">Dynasty</td><td>Attack Category</td><td>Malware, Phishing, BruteForce, DDoS</td></tr>
+                <tr><td class="text-accent">Region</td><td>Source (IP / Network Zone)</td><td>185.220.101.45, 10.0.0.55</td></tr>
+                <tr><td class="text-accent">Deity</td><td>Vulnerability / Target</td><td>Log4Shell CVE, Weak Password, Open Port</td></tr>
+                <tr><td class="text-accent">Religious Tradition</td><td>Threat Type / Attack Pattern</td><td>Ransomware, Spear Phishing, Zero-Day</td></tr>
+                <tr><td class="text-accent">Museum</td><td>Organization / System</td><td>Web Server, Database, Mail Server</td></tr>
+                <tr><td class="text-accent">Material</td><td>Attack Method</td><td>Email, Exploit Script, Payload, HTTP Flood</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Module Cards -->
+<div class="card-title" style="font-family:var(--font-display);font-size:0.75rem;letter-spacing:3px;text-transform:uppercase;color:var(--accent-primary);margin-bottom:0.5rem;">
+    ⬡ System Modules
+</div>
+<div class="module-grid">
+    <a href="/analyzer" class="module-card">
+        <div class="module-icon">🔍</div>
+        <div class="module-name">Threat Analyzer</div>
+        <div class="module-desc">Expert system with forward/backward chaining. Analyze IP, login attempts, and URLs to detect threats with MYCIN certainty factors.</div>
+        <div class="module-tags">
+            <span class="tag">Forward Chaining</span>
+            <span class="tag">Certainty Factors</span>
+            <span class="tag">BFS</span>
+        </div>
+    </a>
+    <a href="/query" class="module-card">
+        <div class="module-icon">💾</div>
+        <div class="module-name">SPARQL Query</div>
+        <div class="module-desc">Run SPARQL queries against the OWL knowledge graph. Pre-built templates for phishing, malware, severity filtering, and property chain inference.</div>
+        <div class="module-tags">
+            <span class="tag">SPARQL</span>
+            <span class="tag">OWL</span>
+            <span class="tag">RDF</span>
+        </div>
+    </a>
+    <a href="/recommendations" class="module-card">
+        <div class="module-icon">⚡</div>
+        <div class="module-name">A* Recommendations</div>
+        <div class="module-desc">Heuristic-based A* search to find similar threats. Similarity computed from attack type, vulnerability, and IP subnet proximity.</div>
+        <div class="module-tags">
+            <span class="tag">A* Search</span>
+            <span class="tag">DFS</span>
+            <span class="tag">Heuristics</span>
+        </div>
+    </a>
+    <a href="/graph" class="module-card">
+        <div class="module-icon">🕸</div>
+        <div class="module-name">Graph Visualization</div>
+        <div class="module-desc">Interactive D3.js knowledge graph. Visualize RDF nodes, edges, threat relationships, and ontology structure with live zoom and pan.</div>
+        <div class="module-tags">
+            <span class="tag">D3.js</span>
+            <span class="tag">Knowledge Graph</span>
+            <span class="tag">RDF</span>
+        </div>
+    </a>
+    <a href="/csp" class="module-card">
+        <div class="module-icon">🛡</div>
+        <div class="module-name">CSP Security Planner</div>
+        <div class="module-desc">Constraint satisfaction problem solver for security planning. Backtracking + MRV heuristic + forward checking to select optimal security measures.</div>
+        <div class="module-tags">
+            <span class="tag">CSP</span>
+            <span class="tag">Backtracking</span>
+            <span class="tag">MRV</span>
+        </div>
+    </a>
+    <div class="module-card" style="cursor:default;">
+        <div class="module-icon">🧠</div>
+        <div class="module-name">Ontology Structure</div>
+        <div class="module-desc">OWL ontology with 10 classes, 11 object properties, 4 data properties, 40+ RDF instances and property chain inference rules.</div>
+        <div class="module-tags">
+            <span class="tag">OWL</span>
+            <span class="tag">Property Chains</span>
+            <span class="tag">Unification</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+fetch('/api/stats').then(r => r.json()).then(d => {
+    document.getElementById('stat-triples').textContent = d.total_triples || '—';
+    document.getElementById('stat-threats').textContent = d.total_threats || '—';
+    document.getElementById('stat-severity').textContent = d.avg_severity || '—';
+    document.getElementById('stat-mitigations').textContent = d.total_mitigations || '—';
+});
+</script>
+{% endblock %}
