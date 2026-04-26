@@ -132,10 +132,9 @@ cs:indicatesThreat a owl:ObjectProperty ;
 cs:classifiedAsThreat a owl:ObjectProperty ;
     rdfs:domain cs:SecurityEvent ;
     rdfs:range cs:Threat ;
-    rdfs:label "classified as threat" .
-
-cs:classifiedAsThreat
+    rdfs:label "classified as threat" ;
     owl:propertyChainAxiom ( cs:hasIndicator cs:indicatesThreat ) .
+
 
 cs:relatedTo a owl:ObjectProperty ;
     rdfs:domain cs:Threat ;
@@ -504,8 +503,8 @@ ex:T009 cs:relatedTo ex:T018 .
 # ex:IOC_SuspiciousPayload cs:indicatesThreat ex:T001 .
 # ex:IOC_DataExfil cs:indicatesThreat ex:T010 .
 
-ex:IOC_SuspiciousLogin cs:indicatesThreat cs:BruteForceAttack .
-ex:IOC_MaliciousURL cs:indicatesThreat cs:PhishingAttack .
-ex:IOC_UnusualTraffic cs:indicatesThreat cs:DDoSAttack .
-ex:IOC_SuspiciousPayload cs:indicatesThreat cs:Malware .
-ex:IOC_DataExfil cs:indicatesThreat cs:Spyware .
+# ex:IOC_SuspiciousLogin cs:indicatesThreat cs:BruteForceAttack .
+# ex:IOC_MaliciousURL cs:indicatesThreat cs:PhishingAttack .
+# ex:IOC_UnusualTraffic cs:indicatesThreat cs:DDoSAttack .
+# ex:IOC_SuspiciousPayload cs:indicatesThreat cs:Malware .
+# ex:IOC_DataExfil cs:indicatesThreat cs:Spyware .

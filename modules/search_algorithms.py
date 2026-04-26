@@ -1,164 +1,151 @@
 """
 MODULE 3: Search Algorithms on Cyber Security Knowledge Graph
 Implements BFS, DFS, and A* for threat traversal and recommendation.
+Optimized to work with RDF-based URI structures.
 """
 
 from collections import deque
 import heapq
 
-
 class ThreatGraphSearch:
     """
-    Search algorithms operating on the RDF knowledge graph
-    represented as an adjacency structure.
+    Search algorithms operating on the Graph Dictionary
+    generated from the CyberSecKnowledgeGraph.
     """
 
     def __init__(self, graph_data):
         """
-        graph_data: dict of {node_uri: {label, type, severity, ip, vuln, related: [...]}}
+        graph_data: dict of {uri: {label, type, severity, ip, vuln, related: [...]}}
         """
-        self.graph = graph_data
+        self.graph = graph_data or {}
 
     def bfs_threats_from_ip(self, target_ip):
         """
         BFS: Find ALL threats connected to a given IP address.
-        Returns list of threat nodes in BFS order.
+        Useful for identifying the scope of an attack from a specific source.
         """
+        if not target_ip: return []
+        
         visited = set()
         queue = deque()
         result = []
 
-        # Find starting nodes (threats that originate from this IP)
-        start_nodes = [
-            uri for uri, data in self.graph.items()
-            if data.get('ip') == target_ip
-        ]
-
-        if not start_nodes:
-            return []
-
-        for start in start_nodes:
-            queue.append(start)
-            visited.add(start)
+        # Find starting nodes: any threat in the graph originating from this IP
+        for uri, data in self.graph.items():
+            if data.get('ip') == target_ip:
+                queue.append((uri, 0)) # (URI, distance)
+                visited.add(uri)
 
         while queue:
-            current = queue.popleft()
-            node_data = self.graph.get(current, {})
+            current_uri, level = queue.popleft()
+            node = self.graph.get(current_uri, {})
+            
             result.append({
-                'uri': current,
-                'label': node_data.get('label', current),
-                'type': node_data.get('type', 'Unknown'),
-                'severity': node_data.get('severity', 0),
-                'ip': node_data.get('ip', ''),
-                'level': node_data.get('level', 0)
+                'uri': current_uri,
+                'label': node.get('label', 'Unknown'),
+                'type': node.get('type', 'Threat'),
+                'severity': node.get('severity', 0),
+                'ip': node.get('ip', ''),
+                'level': level
             })
 
-            # Traverse related threats
-            for related_uri in node_data.get('related', []):
-                if related_uri not in visited:
-                    visited.add(related_uri)
-                    queue.append(related_uri)
+            # Traverse neighbors via cs:relatedTo links
+            for neighbor in node.get('related', []):
+                if neighbor not in visited and neighbor in self.graph:
+                    visited.add(neighbor)
+                    queue.append((neighbor, level + 1))
 
         return result
 
-    def dfs_attack_chain(self, start_uri, max_depth=6):
+    def dfs_attack_chain(self, start_uri, max_depth=5):
         """
-        DFS: Explore full attack chain from a given threat node.
-        Returns the complete chain of connected threats.
+        DFS: Explore the deep "Attack Chain" of connected threats.
+        Useful for uncovering multi-stage persistent threats.
         """
+        if start_uri not in self.graph: return []
+        
         visited = set()
         chain = []
 
-        def dfs_recursive(uri, depth):
-            if depth > max_depth or uri in visited:
+        def explore(uri, depth):
+            if depth > max_depth or uri in visited or uri not in self.graph:
                 return
+            
             visited.add(uri)
-            node_data = self.graph.get(uri, {})
+            node = self.graph[uri]
             chain.append({
                 'uri': uri,
-                'label': node_data.get('label', uri),
-                'type': node_data.get('type', 'Unknown'),
-                'severity': node_data.get('severity', 0),
+                'label': node.get('label', 'Unknown'),
+                'type': node.get('type', 'Threat'),
                 'depth': depth,
-                'ip': node_data.get('ip', ''),
-                'vuln': node_data.get('vuln', '')
+                'severity': node.get('severity', 0)
             })
-            for related_uri in node_data.get('related', []):
-                dfs_recursive(related_uri, depth + 1)
+            
+            for neighbor in node.get('related', []):
+                explore(neighbor, depth + 1)
 
-        dfs_recursive(start_uri, 0)
+        explore(start_uri, 0)
         return chain
 
-    def astar_similar_threats(self, query_threat_uri, top_k=5):
+    def astar_similar_threats(self, query_uri, top_k=5):
         """
-        A*: Recommend similar threats using heuristic based on:
-        - Attack type similarity
-        - Vulnerability similarity
-        - Source IP similarity
-        Lower cost = more similar threat.
+        A*: Recommends threats based on a similarity heuristic.
+        Cost (f) = g (distance in graph) + h (attribute mismatch).
         """
-        query_data = self.graph.get(query_threat_uri, {})
-        if not query_data:
-            return []
+        query_node = self.graph.get(query_uri)
+        if not query_node: return []
 
-        # Priority queue: (f_score, uri)
-        open_set = []
-        g_score = {query_threat_uri: 0}
+        # Priority Queue for A* search: (f_score, uri)
+        pq = []
+        
+        for uri, node in self.graph.items():
+            if uri == query_uri: continue
+            
+            # Heuristic: Calculate "distance" in attributes
+            h = self._heuristic(query_node, node)
+            heapq.heappush(pq, (h, uri))
 
-        # Initialize with all threats as candidates
-        for uri, data in self.graph.items():
-            if uri != query_threat_uri:
-                h = self._heuristic(query_data, data)
-                heapq.heappush(open_set, (h, uri))
-
-        results = []
-        visited = set()
-
-        while open_set and len(results) < top_k:
-            f, uri = heapq.heappop(open_set)
-            if uri in visited:
-                continue
-            visited.add(uri)
-
-            node_data = self.graph.get(uri, {})
-            similarity = round(max(0, 1 - f / 3.0), 3)  # Normalize to 0-1
-
-            results.append({
+        recommendations = []
+        while pq and len(recommendations) < top_k:
+            cost, uri = heapq.heappop(pq)
+            node = self.graph[uri]
+            
+            # Convert cost to a 0-1 Similarity Score
+            similarity = round(max(0.1, 1 - (cost / 3.0)), 2)
+            
+            recommendations.append({
                 'uri': uri,
-                'label': node_data.get('label', uri),
-                'type': node_data.get('type', 'Unknown'),
-                'severity': node_data.get('severity', 0),
+                'label': node.get('label', 'Unknown'),
+                'type': node.get('type', 'Threat'),
+                'severity': node.get('severity', 0),
                 'similarity_score': similarity,
-                'heuristic_cost': round(f, 3),
-                'ip': node_data.get('ip', ''),
-                'vuln': node_data.get('vuln', '')
+                'ip': node.get('ip', ''),
+                'vuln': node.get('vuln', '')
             })
-
-        return results
+            
+        return recommendations
 
     def _heuristic(self, query, candidate):
         """
-        Heuristic function for A*:
-        Computes distance between two threats based on:
-        1. Type mismatch (0 = same, 1 = different)
-        2. Vulnerability mismatch (0 = same, 1 = different)
-        3. IP similarity (0 = same subnet, 1 = different subnet)
+        Computes the 'Difference Cost' between two threats.
+        Lower score = Higher similarity.
         """
         cost = 0.0
-
-        # Type similarity (weight: 1.0)
+        
+        # 1. Type mismatch (Weight: 1.0)
         if query.get('type') != candidate.get('type'):
             cost += 1.0
-
-        # Vulnerability similarity (weight: 1.0)
+            
+        # 2. Vulnerability mismatch (Weight: 1.0)
         if query.get('vuln') != candidate.get('vuln'):
             cost += 1.0
-
-        # IP similarity (weight: 1.0)
-        q_ip = query.get('ip', '').split('.')
-        c_ip = candidate.get('ip', '').split('.')
-        if len(q_ip) == 4 and len(c_ip) == 4:
-            # Compare first two octets (same subnet = similar)
+            
+        # 3. IP Subnet mismatch (Weight: 1.0)
+        q_ip = str(query.get('ip', '')).split('.')
+        c_ip = str(candidate.get('ip', '')).split('.')
+        
+        # If IPs exist and match first two octets (same network), cost is lower
+        if len(q_ip) >= 2 and len(c_ip) >= 2:
             if q_ip[:2] != c_ip[:2]:
                 cost += 1.0
         else:
