@@ -92,6 +92,7 @@ class ThreatGraphSearch:
         A*: Recommends threats based on a similarity heuristic.
         Cost (f) = g (distance in graph) + h (attribute mismatch).
         """
+        top_k = int(top_k) 
         query_node = self.graph.get(query_uri)
         if not query_node: return []
 

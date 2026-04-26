@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}CSP Security Planner — CyberSec KG{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-tag">Module 5 — Constraint Satisfaction Problems</div>
+    <div class="page-title">Security <span>Planner</span></div>
+    <div class="page-subtitle">Backtracking solver to select optimal security measures under diversity constraints.</div>
+</div>
+
+<div class="sidebar-layout">
+    <div class="card">
+        <div class="card-title">⬡ Planning Constraints</div>
+        <ul class="mitigation-list">
+            <li><strong>Variables:</strong> 5 Security Slots (S1...S5)</li>
+            <li><strong>Domain:</strong> Mitigations from Ontology</li>
+            <li><strong>Diversity:</strong> Min 2 different types (Preventive/Detective)</li>
+            <li><strong>No Duplicates:</strong> Each slot must be unique</li>
+        </ul>
+        <button class="btn btn-primary mt-2" onclick="solveCSP()">🛡 Generate Security Plan</button>
+    </div>
+
+    <div id="csp-results">
+        <div class="alert alert-info">Click the button to run the CSP Backtracking solver.</div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function solveCSP() {
+    const resultsDiv = document.getElementById('csp-results');
+    resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div>Running Backtracking solver...</div>';
+
+    const resp = await fetch('/api/csp/solve', { method: 'POST' });
+    const data = await resp.json();
+
+    let html = '';
+    data.solutions.forEach(sol => {
+        html += `
+        <div class="card mb-2">
+            <div class="card-title">⬡ Optimal Solution #${sol.solution_id}</div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Measure</th><th>Type</th></tr></thead>
+                    <tbody>
+                        ${sol.measures.map(m => `<tr><td>${m.name}</td><td><span class="badge badge-low">${m.type}</span></td></tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-xs text-accent mt-1">Constraint Satisfied: Diversity (Types: ${sol.types.join(', ')})</div>
+        </div>`;
+    });
+    resultsDiv.innerHTML = html || '<div class="alert alert-warning">No valid solution found for these constraints.</div>';
+}
+</script>
+{% endblock %}

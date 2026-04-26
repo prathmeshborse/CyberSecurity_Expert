@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Knowledge Graph Visualization — CyberSec KG{% endblock %}
+
+{% block extra_head %}
+<!-- Include D3.js for Graph Visualization -->
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+    #graph-container { width: 100%; height: 600px; background: rgba(0,0,0,0.2); border-radius: 8px; cursor: move; }
+    .node { stroke: #fff; stroke-width: 1.5px; }
+    .link { stroke: #999; stroke-opacity: 0.6; stroke-width: 1px; }
+    .label { font-size: 10px; fill: #00e5ff; font-family: 'Share Tech Mono', monospace; pointer-events: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-tag">Module 3 — Knowledge Graph Visualization</div>
+    <div class="page-title">Knowledge <span>Graph</span></div>
+    <div class="page-subtitle">Interactive visualization of RDF nodes and their relationships (relatedTo).</div>
+</div>
+
+<div class="card">
+    <div class="card-title">⬡ Live RDF Network</div>
+    <div id="graph-container"></div>
+    <div class="mt-1 text-xs text-dim">
+        ● Nodes = Threats | ● Edges = cs:relatedTo | Drag to reposition, Scroll to zoom.
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function drawGraph() {
+    const resp = await fetch('/api/graph/data');
+    const data = await resp.json();
+
+    const width = document.getElementById('graph-container').clientWidth;
+    const height = 600;
+
+    const svg = d3.select("#graph-container")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .call(d3.zoom().on("zoom", (event) => {
+            container.attr("transform", event.transform);
+        }));
+
+    const container = svg.append("g");
+
+    const simulation = d3.forceSimulation(data.nodes)
+        .force("link", d3.forceLink(data.edges).id(d => d.id).distance(100))
+        .force("charge", d3.forceManyBody().strength(-200))
+        .force("center", d3.forceCenter(width / 2, height / 2));
+
+    const link = container.append("g")
+        .selectAll("line")
+        .data(data.edges)
+        .join("line")
+        .attr("class", "link");
+
+    const node = container.append("g")
+        .selectAll("circle")
+        .data(data.nodes)
+        .join("circle")
+        .attr("class", "node")
+        .attr("r", 8)
+        .attr("fill", d => d.group === 'Ransomware' ? '#ff3d71' : '#00e5ff')
+        .call(d3.drag()
+            .on("start", dragstarted)
+            .on("drag", dragged)
+            .on("end", dragended));
+
+    const label = container.append("g")
+        .selectAll("text")
+        .data(data.nodes)
+        .join("text")
+        .attr("class", "label")
+        .text(d => d.label);
+
+    simulation.on("tick", () => {
+        link.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+            .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+        node.attr("cx", d => d.x).attr("cy", d => d.y);
+        label.attr("x", d => d.x + 12).attr("y", d => d.y + 4);
+    });
+
+    function dragstarted(event) {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        event.subject.fx = event.subject.x;
+        event.subject.fy = event.subject.y;
+    }
+    function dragged(event) {
+        event.subject.fx = event.x;
+        event.subject.fy = event.y;
+    }
+    function dragended(event) {
+        if (!event.active) simulation.alphaTarget(0);
+        event.subject.fx = null;
+        event.subject.fy = null;
+    }
+}
+drawGraph();
+</script>
+{% endblock %}

@@ -177,14 +177,42 @@ def api_bfs():
 
 @app.route("/api/search/dfs", methods=["POST"])
 def api_dfs():
+    """DFS: Explore full attack chain from a threat."""
     data = request.get_json()
-    uri = data.get("threat_uri") or list(graph_dict.keys())[0]
-    return jsonify({"chain": searcher.dfs_attack_chain(uri)})
+    threat_uri = data.get("threat_uri", "")
+    
+    # Ensure graph_dict is not empty
+    if not threat_uri and graph_dict:
+        threat_uri = list(graph_dict.keys())[0]
+
+    chain = searcher.dfs_attack_chain(threat_uri)
+    return jsonify({
+        "algorithm": "DFS",
+        "start_threat": threat_uri,
+        "chain_length": len(chain),
+        "attack_chain": chain
+    })
 
 @app.route("/api/search/astar", methods=["POST"])
 def api_astar():
+    """A*: Find similar threats using heuristic search."""
     data = request.get_json()
-    return jsonify({"results": searcher.astar_similar_threats(data.get("threat_uri", ""), data.get("top_k", 5))})
+    threat_uri = data.get("threat_uri", "")
+    
+    # Extract top_k and ensure it is an integer before passing it
+    top_k_val = data.get("top_k", 5)
+    try:
+        top_k = int(top_k_val)
+    except:
+        top_k = 5
+
+    results = searcher.astar_similar_threats(threat_uri, top_k)
+    
+    return jsonify({
+        "algorithm": "A*",
+        "query_threat": threat_uri,
+        "results": results
+    })
 
 @app.route("/api/csp/solve", methods=["POST"])
 def api_csp():
@@ -201,6 +229,25 @@ def api_unify():
     data = request.get_json()
     kb = KnowledgeBase(rdf_graph=kg.graph)
     return jsonify({"bindings": kb.unify(data.get("pattern1", []), data.get("pattern2", []))})
+
+# ============================================================
+# DROPDOWN HELPER API
+# ============================================================
+
+@app.route("/api/threats/list-uris")
+def api_list_uris():
+    """Dynamically fetches all threat URIs and labels for dropdown menus."""
+    # We rebuild the dict to ensure we have the latest data from the Turtle file
+    g = kg.build_graph_dict()
+    uris = [
+        {
+            "uri": uri, 
+            "label": data.get("label", uri.split("#")[-1]), 
+            "type": data.get("type", "Threat")
+        }
+        for uri, data in g.items()
+    ]
+    return jsonify(uris)
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)

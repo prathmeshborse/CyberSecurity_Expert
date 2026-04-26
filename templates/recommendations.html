@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}A* Threat Recommender — CyberSec KG{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-tag">Module 3 — Heuristic Search (A*)</div>
+    <div class="page-title">Threat <span>Recommender</span></div>
+    <div class="page-subtitle">Finding similar threats using A* search with attribute-distance heuristics.</div>
+</div>
+
+<div class="sidebar-layout">
+    <!-- Search Controls -->
+    <div class="card">
+        <div class="card-title">⬡ Recommendation Settings</div>
+        <div class="form-group">
+            <label class="form-label">Select Target Threat</label>
+            <select id="threat-selector" class="form-control">
+                <!-- Populated via JS -->
+                <option value="">Loading threats...</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Max Recommendations (k)</label>
+            <input type="number" id="top-k" class="form-control" value="5" min="1" max="10">
+        </div>
+        <button class="btn btn-primary mt-1" onclick="runAStar()">⚡ Find Similar Threats</button>
+
+        <hr class="divider">
+        <div class="card-title">⬡ A* Heuristic Logic</div>
+        <div class="text-xs text-dim text-mono">
+            f(n) = g(n) + h(n)<br><br>
+            h(n) cost factors:<br>
+            • Type Mismatch: +1.0<br>
+            • Vulnerability Mismatch: +1.0<br>
+            • IP Subnet Mismatch: +1.0
+        </div>
+    </div>
+
+    <!-- Results Panel -->
+    <div id="recommendation-results">
+        <div class="alert alert-info">
+            Select a threat from the dropdown to see similar items based on the A* heuristic.
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Load URIs into dropdown on page load
+async function loadThreats() {
+    const resp = await fetch('/api/threats/list-uris');
+    const uris = await resp.json();
+    const selector = document.getElementById('threat-selector');
+    selector.innerHTML = uris.map(t => `<option value="${t.uri}">${t.label}</option>`).join('');
+}
+
+async function runAStar() {
+    const threat_uri = document.getElementById('threat-selector').value;
+    const top_k = document.getElementById('top-k').value;
+    
+    if (!threat_uri) return;
+
+    const resp = await fetch('/api/search/astar', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ threat_uri, top_k })
+    });
+    const data = await resp.json();
+    
+    let html = `<div class="card">
+        <div class="card-title">⬡ Top Recommendations for ${data.query_threat.split('#').pop()}</div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr><th>Similarity</th><th>Label</th><th>Type</th><th>Severity</th></tr>
+                </thead>
+                <tbody>`;
+    
+    data.results.forEach(item => {
+        const simPct = Math.round(item.similarity_score * 100);
+        html += `<tr>
+            <td>
+                <div class="text-xs mb-1">${simPct}% Match</div>
+                <div class="cf-track" style="height:4px;"><div class="cf-fill" style="width:${simPct}%"></div></div>
+            </td>
+            <td><strong>${item.label}</strong><br><small class="text-dim">${item.uri.split('#').pop()}</small></td>
+            <td><span class="badge badge-info">${item.type}</span></td>
+            <td>${item.severity}</td>
+        </tr>`;
+    });
+
+    html += `</tbody></table></div></div>`;
+    document.getElementById('recommendation-results').innerHTML = html;
+}
+
+loadThreats();
+</script>
+{% endblock %}
