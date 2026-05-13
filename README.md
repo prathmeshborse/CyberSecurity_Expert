@@ -96,17 +96,5 @@ The system is implemented as a **Goal-Based Agent**:
 
 5.  Access the Dashboard: Open http://127.0.0.1:5001 in your browser.
 
-📊 Domain Mapping Summary (Academic Alignment)
-
-| Museum Project Concept | Cyber Security Equivalent                   |
-| :--------------------- | :------------------------------------------ |
-| **Artefact**           | Cyber Threat Instance (e.g., WannaCry)      |
-| **Dynasty**            | Attack Category (e.g., Ransomware)          |
-| **Region**             | Source IP / Network Subnet                  |
-| **Deity**              | Target Vulnerability (e.g., CVE-2021-44228) |
-| **Material**           | Attack Method (Payload, URL, Script)        |
-| **Museum**             | Target System (Web Server, Database)        |
-
 Author: Prathamesh Borse, Nirantar Mandogade
 Project: Symbolic AI Minor Project v1.0
-
